@@ -1,0 +1,25 @@
+2026-02-11 23:39:21,844 - api_football.api_client - INFO - Cliente API-Futbol inicializado correctamente
+2026-02-11 23:39:21,844 - api_football.api_client - INFO - Obteniendo todas las ligas...
+2026-02-11 23:39:24,066 - api_football.api_client - INFO - Se encontraron 1218 ligas
+2026-02-11 23:39:24,072 - api_football.db_manager - INFO - DatabaseManager inicializado para BD: test_database
+2026-02-11 23:39:24,150 - api_football.db_manager - INFO - Conexión exitosa a MongoDB: test_database.football_matches
+2026-02-11 23:39:24,166 - api_football.db_manager - WARNING - Error creando índices: Index already exists with a different name: season_id_1, full error: {'ok': 0.0, 'errmsg': 'Index already exists with a different name: season_id_1', 'code': 85, 'codeName': 'IndexOptionsConflict'}
+2026-02-11 23:39:24,398 - api_football.db_manager - INFO - Conexión a MongoDB cerrada
+2026-02-11 23:39:24,401 - api_football.api_client - INFO - Cliente API-Futbol inicializado correctamente
+2026-02-11 23:39:24,401 - api_football.db_manager - INFO - DatabaseManager inicializado para BD: test_database
+2026-02-11 23:39:24,424 - api_football.db_manager - INFO - Conexión exitosa a MongoDB: test_database.football_matches
+2026-02-11 23:39:24,428 - api_football.db_manager - WARNING - Error creando índices: Index already exists with a different name: season_id_1, full error: {'ok': 0.0, 'errmsg': 'Index already exists with a different name: season_id_1', 'code': 85, 'codeName': 'IndexOptionsConflict'}
+2026-02-11 23:39:24,429 - api_football.api_client - INFO - Obteniendo todas las ligas...
+2026-02-11 23:39:25,737 - api_football.api_client - INFO - Se encontraron 1218 ligas
+2026-02-11 23:39:25,738 - api_football.api_client - INFO - Obteniendo partidos de la liga 140, temporada 2023...
+2026-02-11 23:39:26,722 - api_football.api_client - INFO - Se encontraron 380 partidos para la liga 140
+2026-02-11 23:39:26,723 - api_football.api_client - INFO - Obteniendo clasificación de la liga 140...
+2026-02-11 23:39:27,654 - api_football.api_client - INFO - Se obtuvieron posiciones de 20 equipos
+2026-02-11 23:39:27,660 - api_football.data_transformer - INFO - Transformados 5 de 5 fixtures
+2026-02-11 23:39:27,695 - api_football.db_manager - ERROR - Error actualizando partido: Plan executor error during update :: caused by :: Performing an update on the path '_id' would modify the immutable field '_id', full error: {'index': 0, 'code': 66, 'errmsg': "Plan executor error during update :: caused by :: Performing an update on the path '_id' would modify the immutable field '_id'"}
+2026-02-11 23:39:27,697 - api_football.db_manager - ERROR - Error actualizando partido: Plan executor error during update :: caused by :: Performing an update on the path '_id' would modify the immutable field '_id', full error: {'index': 0, 'code': 66, 'errmsg': "Plan executor error during update :: caused by :: Performing an update on the path '_id' would modify the immutable field '_id'"}
+2026-02-11 23:39:27,701 - api_football.db_manager - ERROR - Error actualizando partido: Plan executor error during update :: caused by :: Performing an update on the path '_id' would modify the immutable field '_id', full error: {'index': 0, 'code': 66, 'errmsg': "Plan executor error during update :: caused by :: Performing an update on the path '_id' would modify the immutable field '_id'"}
+2026-02-11 23:39:27,702 - api_football.db_manager - ERROR - Error actualizando partido: Plan executor error during update :: caused by :: Performing an update on the path '_id' would modify the immutable field '_id', full error: {'index': 0, 'code': 66, 'errmsg': "Plan executor error during update :: caused by :: Performing an update on the path '_id' would modify the immutable field '_id'"}
+2026-02-11 23:39:27,704 - api_football.db_manager - ERROR - Error actualizando partido: Plan executor error during update :: caused by :: Performing an update on the path '_id' would modify the immutable field '_id', full error: {'index': 0, 'code': 66, 'errmsg': "Plan executor error during update :: caused by :: Performing an update on the path '_id' would modify the immutable field '_id'"}
+2026-02-11 23:39:27,704 - api_football.db_manager - INFO - Inserción completada - Insertados: 0, Actualizados: 0, Duplicados: 5, Errores: 0
+2026-02-11 23:39:27,706 - api_football.db_manager - INFO - Conexión a MongoDB cerrada
