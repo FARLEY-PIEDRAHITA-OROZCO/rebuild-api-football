@@ -1,6 +1,6 @@
 """Gestor de base de datos MongoDB."""
 from pymongo import MongoClient, ASCENDING, DESCENDING
-from pymongo.errors import DuplicateKeyError, PyMongoError
+from pymongo.errors import DuplicateKeyError, PyMongoError, OperationFailure
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from .config import MONGO_URL, DB_NAME, COLLECTION_NAME, SEASONS_COLLECTION
@@ -132,8 +132,15 @@ class DatabaseManager:
             
             logger.info("Índices creados correctamente")
             
+        
+        except OperationFailure as e:
+                if getattr(e, "code", None) == 85:
+                    logger.warning(f"Índice ya existente con otra definición: {e}")
+                else:
+                    raise
         except PyMongoError as e:
             logger.warning(f"Error creando índices: {str(e)}")
+
     
     def insert_match(self, match_data: Dict[str, Any]) -> bool:
         """Inserta un partido en la base de datos.
@@ -178,14 +185,13 @@ class DatabaseManager:
                 return False
             
             # Actualizar campos, incluyendo nuevos season_id y match_id
-            match_data['updated_at'] = datetime.utcnow().isoformat()
             
-            result = self.collection.update_one(
-                query,
-                {'$set': match_data}
-            )
-            
-            return result.modified_count > 0 or result.matched_count > 0
+            safe_set = {k: v for k, v in match_data.items() if k != '_id'}
+            safe_set['updated_at'] = datetime.utcnow().isoformat()
+
+            result = self.collection.update_one(query, {'$set': safe_set})
+            return (result.modified_count > 0) or (result.matched_count > 0)
+
             
         except PyMongoError as e:
             logger.error(f"Error actualizando partido: {str(e)}")

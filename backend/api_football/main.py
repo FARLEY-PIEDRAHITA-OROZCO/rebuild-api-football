@@ -78,7 +78,7 @@ def process_league(
         stats['errores'] = insert_stats['errores']
         
         logger.info(
-            f"✓ Liga procesada: {stats['insertados']} nuevos, "
+            f"Liga procesada: {stats['insertados']} nuevos, "
             f"{stats['duplicados']} duplicados"
         )
         
