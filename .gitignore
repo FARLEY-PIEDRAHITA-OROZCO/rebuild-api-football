@@ -43,6 +43,8 @@ yarn-error.log*
 .pnpm-debug.log*
 dump.rdb
 /backend/api_football.log
+/api_football.log
+
 
 # System files
 .DS_Store
@@ -78,7 +80,6 @@ agenthub/agents/youtube/db
 
 # Build caches
 .cache/
-api_football.log
 
 # Mobile development
 android-sdk/ 
