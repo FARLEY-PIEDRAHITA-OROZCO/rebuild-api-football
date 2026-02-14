@@ -35,6 +35,7 @@ dist
 *credentials.json*
 .env
 .env.local
+.venv-rebuild-api-football
 
 # Logs and debug files
 npm-debug.log*
