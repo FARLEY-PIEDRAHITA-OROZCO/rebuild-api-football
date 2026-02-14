@@ -41,3 +41,11 @@ tzdata==2025.2
 # Análisis de Datos (opcional, para estadísticas avanzadas)
 numpy==2.3.5
 pandas==2.3.3
+
+# Pruebas
+pytest
+pytest-html
+pytest-sugar
+
+# Para Allure (opcional):
+allure-pytest
