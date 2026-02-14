@@ -18,6 +18,10 @@ PY_MIN_MINOR=9
 # Permite sobrescribir el binario de Python
 PYTHON_BIN="${PYTHON_BIN:-}"
 
+# Reporte por defecto (para --tests)
+REPORT_KIND="none"      # none | html | html-standalone
+NO_SUGAR="false"        # true => pytest sin pytest-sugar (salida clásica)
+
 # Colores
 if [[ -t 1 ]]; then
   RED="\033[31m"; GREEN="\033[32m"; YELLOW="\033[33m"; BLUE="\033[34m"; BOLD="\033[1m"; NC="\033[0m"
@@ -26,10 +30,12 @@ else
 fi
 
 # ---------- Utilidades ----------
-err() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+err()  { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 info() { echo -e "${BLUE}[INFO]${NC} $*"; }
-ok() { echo -e "${GREEN}[OK]${NC} $*"; }
+ok()   { echo -e "${GREEN}[OK]${NC} $*"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
+
+ensure_dir() { [[ -d "$1" ]] || mkdir -p "$1"; }
 
 cleanup() {
   # Lugar para limpiar recursos si fuera necesario
@@ -43,8 +49,11 @@ usage() {
 ${BOLD}MÓDULO API-FÚTBOL${NC}
 
 Uso:
-  $(basename "$0")                # Modo interactivo
-  $(basename "$0") --tests
+  $(basename "$0")                     # Modo interactivo
+  $(basename "$0") --tests             # Ejecuta tests (sin reporte por defecto)
+  $(basename "$0") --tests --report html
+  $(basename "$0") --tests --report html-standalone
+  $(basename "$0") --tests --no-sugar
   $(basename "$0") --all [-y|--yes]
   $(basename "$0") --limit N
   $(basename "$0") --league ID
@@ -52,19 +61,32 @@ Uso:
   $(basename "$0") --help
 
 Opciones:
-  --tests           Ejecuta los tests.
-  --all             Procesa todas las ligas (puede tardar horas).
-  -y, --yes         Omite confirmaciones (solo con --all).
-  --limit N         Procesa N ligas (modo prueba). Por defecto: ${DEFAULT_LIMIT}.
-  --league ID       Procesa una liga específica (numérica).
-  --stats           Muestra estadísticas de la BD.
-  --help            Muestra esta ayuda.
+  --tests                 Ejecuta los tests automatizados.
+  --report KIND           Tipo de reporte para --tests:
+                             • html              → Genera reports/pytest_report.html
+                             • html-standalone   → HTML auto‑contenido (un solo archivo)
+                           Ejemplo:
+                             $(basename "$0") --tests --report html
+  --no-sugar              Ejecuta pytest sin el plugin pytest-sugar (salida clásica)
+
+  --all                   Procesa TODAS las ligas (toma horas).
+  -y, --yes               Omite confirmación al usar --all.
+  --limit N               Procesa N ligas (modo prueba). Por defecto: ${DEFAULT_LIMIT}.
+  --league ID             Procesa una liga específica (ID numérico).
+  --stats                 Muestra estadísticas de la base de datos.
+  --help                  Muestra esta ayuda.
 
 Variables de entorno:
-  PYTHON_BIN        Ruta al binario de Python (ej: /usr/bin/python3).
-                    Si no se define, se intentará 'python3' y luego 'python'.
+  PYTHON_BIN              Ruta al binario de Python (ej: /usr/bin/python3).
+                          Si no se define, se intentará python3 y luego python.
 EOF
 }
+
+# ---------- Manejo temprano de --help (evita side-effects) ----------
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  usage
+  exit 0
+fi
 
 # Detecta el binario de Python y verifica versión
 detect_python() {
@@ -106,11 +128,6 @@ activate_venv() {
     source "venv/bin/activate"
     ok "Entorno virtual venv activado"
     PYTHON_BIN="python"
-  elif [[ -f "venv/bin/activate" ]]; then
-    #shellcheck source=/dev/null
-    source "venv/bin/activate"
-    ok "Entorno virtual venv activado"
-    PYTHON_BIN="python"
   fi
 }
 
@@ -140,7 +157,28 @@ confirm() {
 # ---------- Acciones ----------
 run_tests() {
   info "Ejecutando tests..."
-  "$PYTHON_BIN" -m pytest -q || "$PYTHON_BIN" test_api_football.py
+  local pytest_opts="-q"
+  [[ "$NO_SUGAR" == "true" ]] && pytest_opts="$pytest_opts -p no:sugar"
+
+  case "$REPORT_KIND" in
+    none)
+      "$PYTHON_BIN" -m pytest $pytest_opts || "$PYTHON_BIN" test_api_football.py
+      ;;
+    html)
+      ensure_dir "reports"
+      info "Generando reporte HTML: reports/pytest_report.html"
+      "$PYTHON_BIN" -m pytest $pytest_opts --html=reports/pytest_report.html || "$PYTHON_BIN" test_api_football.py
+      ;;
+    html-standalone)
+      ensure_dir "reports"
+      info "Generando reporte HTML auto-contenido: reports/pytest_report.html"
+      "$PYTHON_BIN" -m pytest $pytest_opts --html=reports/pytest_report.html --self-contained-html || "$PYTHON_BIN" test_api_football.py
+      ;;
+    *)
+      err "Tipo de reporte no soportado: $REPORT_KIND"
+      return 2
+      ;;
+  esac
 }
 
 process_all() {
@@ -195,30 +233,39 @@ PY
 
 # ---------- Parseo de flags (no interactivo) ----------
 if (( $# > 0 )); then
+  # 1) Parsear flags SIN ejecutar acciones (permite combinaciones)
+  ASSUME_YES="false"
+  DO_TESTS="false"; DO_ALL="false"; DO_LIMIT="false"; DO_LEAGUE="false"; DO_STATS="false"
+  LIMIT_N="$DEFAULT_LIMIT"; LEAGUE_ID=""
+
+  while (( $# > 0 )); do
+    case "$1" in
+      --tests) DO_TESTS="true"; shift;;
+      --report) REPORT_KIND="${2:-none}"; shift 2;;
+      --no-sugar) NO_SUGAR="true"; shift;;
+      --all) DO_ALL="true"; if [[ "${2:-}" == "-y" || "${2:-}" == "--yes" ]]; then ASSUME_YES="true"; shift 2; else shift; fi;;
+      --limit) DO_LIMIT="true"; LIMIT_N="${2:-$DEFAULT_LIMIT}"; shift 2;;
+      --league) DO_LEAGUE="true"; LEAGUE_ID="${2:-}"; shift 2;;
+      --stats) DO_STATS="true"; shift;;
+      --help|-h) usage; exit 0;;
+      *) err "Opción no reconocida: $1"; usage; exit 2;;
+    esac
+  done
+
+  # 2) Setup (solo si hay algo que ejecutar)
   enter_app_dir
   activate_venv
   detect_python
 
-  ASSUME_YES="false"
-  case "${1:-}" in
-    --help|-h)
-      usage; exit 0;;
-    --tests)
-      run_tests;;
-    --all)
-      if [[ "${2:-}" == "-y" || "${2:-}" == "--yes" ]]; then ASSUME_YES="true"; fi
-      process_all "$ASSUME_YES";;
-    --limit)
-      process_limit "${2:-$DEFAULT_LIMIT}";;
-    --league)
-      if [[ -z "${2:-}" ]]; then err "Falta el ID de liga para --league"; exit 1; fi
-      process_league "$2";;
-    --stats)
-      show_stats;;
-    *)
-      err "Opción no reconocida: $1"
-      usage; exit 2;;
-  esac
+  # 3) Ejecutar acciones según flags
+  [[ "$DO_TESTS" == "true" ]] && run_tests
+  [[ "$DO_ALL" == "true" ]] && process_all "$ASSUME_YES"
+  [[ "$DO_LIMIT" == "true" ]] && process_limit "$LIMIT_N"
+  if [[ "$DO_LEAGUE" == "true" ]]; then
+    [[ -z "$LEAGUE_ID" ]] && { err "Falta el ID de liga para --league"; exit 1; }
+    process_league "$LEAGUE_ID"
+  fi
+  [[ "$DO_STATS" == "true" ]] && show_stats
   exit 0
 fi
 
@@ -244,6 +291,18 @@ read -r -p "Selecciona una opción (1-5): " option
 case "$option" in
   1)
     echo
+    # Submenú de reporte de tests
+    echo "Formato de reporte:"
+    echo "  1) Sin reporte (consola)"
+    echo "  2) HTML"
+    echo "  3) HTML auto-contenido"
+    read -r -p "Elige (1-3): " rep
+    case "$rep" in
+      1) REPORT_KIND="none" ;;
+      2) REPORT_KIND="html" ;;
+      3) REPORT_KIND="html-standalone" ;;
+      *) REPORT_KIND="none" ;;
+    esac
     run_tests
     ;;
   2)

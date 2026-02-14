@@ -45,7 +45,7 @@ yarn-error.log*
 dump.rdb
 /backend/api_football.log
 /api_football.log
-
+/backend/reports/*
 
 # System files
 .DS_Store
